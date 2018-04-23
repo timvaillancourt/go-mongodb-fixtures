@@ -8,8 +8,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const versionsSubdir = "versions"
+
 func LoadFixture(fixturesDir, version, command string, out interface{}) error {
-	filePath := filepath.Join(fixturesDir, version, command+".bson")
+	filePath := filepath.Join(fixturesDir, versionsSubdir, version, command+".bson")
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -18,15 +20,15 @@ func LoadFixture(fixturesDir, version, command string, out interface{}) error {
 }
 
 func WriteFixture(fixturesDir, version, command string, data []byte) error {
-	versionDir := filepath.Join(fixturesDir, version)
+	versionDir := filepath.Join(fixturesDir, versionsSubdir, version)
 	if _, err := os.Stat(versionDir); os.IsNotExist(err) {
 		err = os.Mkdir(versionDir, 0755)
 		if err != nil {
 			return err
 		}
 	}
-	filePath := filepath.Join(fixturesDir, version, command+".bson")
-	return ioutil.WriteFile(filePath, data, 0640)
+	filePath := filepath.Join(versionDir, command+".bson")
+	return ioutil.WriteFile(filePath, data, 0644)
 }
 
 func FixtureVersions(fixturesDir string) []string {
@@ -36,7 +38,9 @@ func FixtureVersions(fixturesDir string) []string {
 		return versions
 	}
 	for _, subdir := range subdirs {
-		versions = append(versions, subdir.Name())
+		if subdir.IsDir() {
+			versions = append(versions, subdir.Name())
+		}
 	}
 	return versions
 }
