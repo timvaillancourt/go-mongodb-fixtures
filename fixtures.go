@@ -8,10 +8,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const versionsSubdir = "versions"
+var fixturesDir = filepath.Join(
+	os.Getenv("GOPATH"),
+	"src",
+	"github.com",
+	"timvaillancourt",
+	"go-mongodb-fixtures",
+	"versions",
+)
 
-func LoadFixture(fixturesDir, version, command string, out interface{}) error {
-	filePath := filepath.Join(fixturesDir, versionsSubdir, version, command+".bson")
+func LoadFixture(version, command string, out interface{}) error {
+	filePath := filepath.Join(fixturesDir, version, command+".bson")
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -19,8 +26,8 @@ func LoadFixture(fixturesDir, version, command string, out interface{}) error {
 	return bson.Unmarshal(bytes, out)
 }
 
-func WriteFixture(fixturesDir, version, command string, data []byte) error {
-	versionDir := filepath.Join(fixturesDir, versionsSubdir, version)
+func WriteFixture(version, command string, data []byte) error {
+	versionDir := filepath.Join(fixturesDir, version)
 	if _, err := os.Stat(versionDir); os.IsNotExist(err) {
 		err = os.Mkdir(versionDir, 0755)
 		if err != nil {
@@ -31,7 +38,7 @@ func WriteFixture(fixturesDir, version, command string, data []byte) error {
 	return ioutil.WriteFile(filePath, data, 0644)
 }
 
-func FixtureVersions(fixturesDir string) []string {
+func FixtureVersions() []string {
 	var versions []string
 	subdirs, err := ioutil.ReadDir(fixturesDir)
 	if err != nil {

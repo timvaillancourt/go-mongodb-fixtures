@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	mongodbUri  = flag.String("uri", "mongodb://localhost:27017", "mongodb server uri")
-	fixturesDir = flag.String("dir", "./", "path to 'fixtures' directory")
-	commands    = []string{
+	mongodbUri = flag.String("uri", "mongodb://localhost:27017", "mongodb server uri")
+	commands   = []string{
 		"serverStatus",
 		"replSetGetConfig",
 		"replSetGetStatus",
@@ -51,7 +50,7 @@ func main() {
 			panic(err)
 		}
 
-		err = fixtures.WriteFixture(*fixturesDir, version, command, data.Data)
+		err = fixtures.WriteFixture(version, command, data.Data)
 		if err != nil {
 			panic(err)
 		}
