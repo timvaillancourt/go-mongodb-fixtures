@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	"github.com/timvaillancourt/go-mongodb-fixtures/util"
+	fixtures "github.com/timvaillancourt/go-mongodb-fixtures"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -51,7 +51,7 @@ func main() {
 			panic(err)
 		}
 
-		err = util.WriteFixture(*fixturesDir, version, command, data.Data)
+		err = fixtures.WriteFixture(*fixturesDir, version, command, data.Data)
 		if err != nil {
 			panic(err)
 		}
