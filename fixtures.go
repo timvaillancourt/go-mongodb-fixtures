@@ -1,4 +1,4 @@
-package util
+package fixtures
 
 import (
 	"io/ioutil"
