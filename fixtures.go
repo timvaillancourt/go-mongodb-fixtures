@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	version "github.com/hashicorp/go-version"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -17,8 +18,8 @@ var fixturesDir = filepath.Join(
 	"versions",
 )
 
-func LoadFixture(version, command string, out interface{}) error {
-	filePath := filepath.Join(fixturesDir, version, command+".bson")
+func Load(versionStr, command string, out interface{}) error {
+	filePath := filepath.Join(fixturesDir, versionStr, command+".bson")
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -26,8 +27,8 @@ func LoadFixture(version, command string, out interface{}) error {
 	return bson.Unmarshal(bytes, out)
 }
 
-func WriteFixture(version, command string, data []byte) error {
-	versionDir := filepath.Join(fixturesDir, version)
+func Write(versionStr, command string, data []byte) error {
+	versionDir := filepath.Join(fixturesDir, versionStr)
 	if _, err := os.Stat(versionDir); os.IsNotExist(err) {
 		err = os.Mkdir(versionDir, 0755)
 		if err != nil {
@@ -38,7 +39,7 @@ func WriteFixture(version, command string, data []byte) error {
 	return ioutil.WriteFile(filePath, data, 0644)
 }
 
-func FixtureVersions() []string {
+func Versions() []string {
 	var versions []string
 	subdirs, err := ioutil.ReadDir(fixturesDir)
 	if err != nil {
@@ -50,4 +51,26 @@ func FixtureVersions() []string {
 		}
 	}
 	return versions
+}
+
+func VersionsFilter(filter string) []string {
+	var versions []string
+	for _, versionStr := range Versions() {
+		if IsVersionMatch(versionStr, filter) {
+			versions = append(versions, versionStr)
+		}
+	}
+	return versions
+}
+
+func IsVersionMatch(versionStr, filter string) bool {
+	constraints, err := version.NewConstraint(filter)
+	if err != nil {
+		return false
+	}
+	v, err := version.NewVersion(versionStr)
+	if err != nil {
+		return false
+	}
+	return constraints.Check(v)
 }

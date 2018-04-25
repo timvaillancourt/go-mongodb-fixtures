@@ -50,7 +50,7 @@ func main() {
 			panic(err)
 		}
 
-		err = fixtures.WriteFixture(version, command, data.Data)
+		err = fixtures.Write(version, command, data.Data)
 		if err != nil {
 			panic(err)
 		}
