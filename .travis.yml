@@ -11,6 +11,7 @@ matrix:
 install:
   - go get -t ./...
 script:
+
   - make
 after_success:
   - bash <(curl -s https://codecov.io/bash)
