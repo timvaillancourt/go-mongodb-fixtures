@@ -20,16 +20,16 @@ type serverCommand struct {
 var (
 	mongodbUri     = flag.String("uri", "mongodb://localhost:27017", "mongodb server uri")
 	serverCommands = []serverCommand{
-		serverCommand{Name: "currentOp", Value: "1", Db: "admin"},
-		serverCommand{Name: "getCmdLineOpts", Value: "1", Db: "admin"},
-		serverCommand{Name: "hostInfo", Value: "1", Db: "admin"},
-		serverCommand{Name: "isMaster", Value: "1", Db: "admin"},
-		serverCommand{Name: "listCollections", Value: "1", Db: "admin"},
-		serverCommand{Name: "listDatabases", Value: "1", Db: "admin"},
-		serverCommand{Name: "replSetGetConfig", Value: "1", Db: "admin"},
-		serverCommand{Name: "replSetGetStatus", Value: "1", Db: "admin"},
-		serverCommand{Name: "serverStatus", Value: "1", Db: "admin"},
-		serverCommand{Name: "top", Value: "1", Db: "admin"},
+		{Name: "currentOp", Value: "1", Db: "admin"},
+		{Name: "getCmdLineOpts", Value: "1", Db: "admin"},
+		{Name: "hostInfo", Value: "1", Db: "admin"},
+		{Name: "isMaster", Value: "1", Db: "admin"},
+		{Name: "listCollections", Value: "1", Db: "admin"},
+		{Name: "listDatabases", Value: "1", Db: "admin"},
+		{Name: "replSetGetConfig", Value: "1", Db: "admin"},
+		{Name: "replSetGetStatus", Value: "1", Db: "admin"},
+		{Name: "serverStatus", Value: "1", Db: "admin"},
+		{Name: "top", Value: "1", Db: "admin"},
 	}
 )
 
