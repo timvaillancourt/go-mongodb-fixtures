@@ -34,7 +34,7 @@ type ServerInfo struct {
 
 func isServerPSMDB(session *mgo.Session) (bool, error) {
 	resp := struct {
-		Ok int `bson:ok"`
+		Ok int `bson:"ok"`
 	}{}
 	err := session.Run(bson.M{"getParameter": 1, "profilingRateLimit": true}, &resp)
 	if err != nil || resp.Ok != 1 {
