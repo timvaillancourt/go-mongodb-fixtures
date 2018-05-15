@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"strings"
 
 	fixtures "github.com/timvaillancourt/go-mongodb-fixtures"
@@ -9,12 +10,27 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type serverCommand struct {
+	Name  string
+	Value string
+	Db    string
+	Coll  string
+	Query string
+}
+
 var (
-	mongodbUri = flag.String("uri", "mongodb://localhost:27017", "mongodb server uri")
-	commands   = []string{
-		"serverStatus",
-		"replSetGetConfig",
-		"replSetGetStatus",
+	mongodbUri     = flag.String("uri", "mongodb://localhost:27017", "mongodb server uri")
+	serverCommands = []serverCommand{
+		serverCommand{Name: "currentOp", Value: "1", Db: "admin"},
+		serverCommand{Name: "getCmdLineOpts", Value: "1", Db: "admin"},
+		serverCommand{Name: "hostInfo", Value: "1", Db: "admin"},
+		serverCommand{Name: "isMaster", Value: "1", Db: "admin"},
+		serverCommand{Name: "listCollections", Value: "1", Db: "admin"},
+		serverCommand{Name: "listDatabases", Value: "1", Db: "admin"},
+		serverCommand{Name: "replSetGetConfig", Value: "1", Db: "admin"},
+		serverCommand{Name: "replSetGetStatus", Value: "1", Db: "admin"},
+		serverCommand{Name: "serverStatus", Value: "1", Db: "admin"},
+		serverCommand{Name: "top", Value: "1", Db: "admin"},
 	}
 )
 
@@ -30,27 +46,38 @@ func serverVersion(session *mgo.Session) (string, error) {
 	return buildInfo.Version, nil
 }
 
+func serverFlavour(session *mgo.Session) (fixtures.MongoDBFlavour, error) {
+	return fixtures.PerconaServerForMongoDB, nil
+}
+
 func main() {
 	flag.Parse()
 
 	session, err := mgo.Dial(*mongodbUri)
 	if err != nil {
-		panic(err)
+		log.Fatalf("cannot get db connection: %s", err.Error())
 	}
 
 	version, err := serverVersion(session)
 	if err != nil {
-		panic(err)
+		log.Fatalf("cannot get db version: %s", err.Error())
 	}
 
-	for _, command := range commands {
-		var data bson.Raw
-		err = session.DB("admin").Run(bson.D{{command, "1"}}, &data)
+	flavour, err := serverFlavour(session)
+	if err != nil {
+		log.Fatalf("cannot get db flavour: %s", err.Error())
+	}
+
+	var data bson.Raw
+	for _, cmd := range serverCommands {
+		log.Printf("Running command on db %s: '{%s: \"%s\"}'\n", cmd.Db, cmd.Name, cmd.Value)
+
+		err = session.DB(cmd.Db).Run(bson.D{{cmd.Name, cmd.Value}}, &data)
 		if err != nil {
 			panic(err)
 		}
 
-		err = fixtures.Write(version, command, data.Data)
+		err = fixtures.Write(flavour, version, cmd.Name, data.Data)
 		if err != nil {
 			panic(err)
 		}

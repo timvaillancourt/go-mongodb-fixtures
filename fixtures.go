@@ -10,7 +10,22 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func VersionsDir() string {
+type MongoDBFlavour string
+
+const (
+	MongoDBCommunity        MongoDBFlavour = "mongodb"
+	PerconaServerForMongoDB MongoDBFlavour = "psmdb"
+)
+
+func (mf MongoDBFlavour) String() string {
+	return string(mf)
+}
+
+func (mf MongoDBFlavour) Dir() string {
+	return filepath.Join(versionsDir(), mf.String())
+}
+
+func versionsDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return ""
@@ -18,8 +33,8 @@ func VersionsDir() string {
 	return filepath.Join(filepath.Dir(filename), "versions")
 }
 
-func Load(versionStr, command string, out interface{}) error {
-	filePath := filepath.Join(VersionsDir(), versionStr, command+".bson")
+func Load(flavour MongoDBFlavour, versionStr, command string, out interface{}) error {
+	filePath := filepath.Join(flavour.Dir(), versionStr, command+".bson")
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -27,10 +42,10 @@ func Load(versionStr, command string, out interface{}) error {
 	return bson.Unmarshal(bytes, out)
 }
 
-func Write(versionStr, command string, data []byte) error {
-	versionDir := filepath.Join(VersionsDir(), versionStr)
+func Write(flavour MongoDBFlavour, versionStr, command string, data []byte) error {
+	versionDir := filepath.Join(flavour.Dir(), versionStr)
 	if _, err := os.Stat(versionDir); os.IsNotExist(err) {
-		err = os.Mkdir(versionDir, 0755)
+		err = os.MkdirAll(versionDir, 0755)
 		if err != nil {
 			return err
 		}
@@ -39,9 +54,9 @@ func Write(versionStr, command string, data []byte) error {
 	return ioutil.WriteFile(filePath, data, 0644)
 }
 
-func Versions() []string {
+func Versions(flavour MongoDBFlavour) []string {
 	var versions []string
-	subdirs, err := ioutil.ReadDir(VersionsDir())
+	subdirs, err := ioutil.ReadDir(flavour.Dir())
 	if err != nil {
 		return versions
 	}
@@ -53,9 +68,9 @@ func Versions() []string {
 	return versions
 }
 
-func VersionsFilter(filter string) []string {
+func VersionsFilter(flavour MongoDBFlavour, filter string) []string {
 	var versions []string
-	for _, versionStr := range Versions() {
+	for _, versionStr := range Versions(flavour) {
 		if IsVersionMatch(versionStr, filter) {
 			versions = append(versions, versionStr)
 		}
