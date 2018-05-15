@@ -5,15 +5,17 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	version "github.com/hashicorp/go-version"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 type MongoDBFlavour string
 
 const (
-	MongoDBCommunity        MongoDBFlavour = "mongodb"
+	MongoDB                 MongoDBFlavour = "mongodb"
 	PerconaServerForMongoDB MongoDBFlavour = "psmdb"
 )
 
@@ -23,6 +25,45 @@ func (mf MongoDBFlavour) String() string {
 
 func (mf MongoDBFlavour) Dir() string {
 	return filepath.Join(versionsDir(), mf.String())
+}
+
+type ServerInfo struct {
+	Version string
+	Flavour MongoDBFlavour
+}
+
+func isServerPSMDB(session *mgo.Session) (bool, error) {
+	resp := struct {
+		Ok int `bson:ok"`
+	}{}
+	err := session.Run(bson.M{"getParameter": 1, "profilingRateLimit": true}, &resp)
+	if err != nil || resp.Ok != 1 {
+		return false, err
+	}
+	return true, nil
+}
+
+func GetServerInfo(session *mgo.Session) (*ServerInfo, error) {
+	info := &ServerInfo{
+		Flavour: MongoDB,
+	}
+
+	buildInfo, err := session.BuildInfo()
+	if err != nil {
+		return info, err
+	}
+	info.Version = buildInfo.Version
+	if strings.Contains(buildInfo.Version, "-") {
+		versionElems := strings.SplitN(buildInfo.Version, "-", 2)
+		info.Version = versionElems[0]
+		isPSMDB, err := isServerPSMDB(session)
+		if err != nil {
+			return info, err
+		} else if isPSMDB {
+			info.Flavour = PerconaServerForMongoDB
+		}
+	}
+	return info, nil
 }
 
 func versionsDir() string {
@@ -42,8 +83,8 @@ func Load(flavour MongoDBFlavour, versionStr, command string, out interface{}) e
 	return bson.Unmarshal(bytes, out)
 }
 
-func Write(flavour MongoDBFlavour, versionStr, command string, data []byte) error {
-	versionDir := filepath.Join(flavour.Dir(), versionStr)
+func Write(serverInfo *ServerInfo, command string, data []byte) error {
+	versionDir := filepath.Join(serverInfo.Flavour.Dir(), serverInfo.Version)
 	if _, err := os.Stat(versionDir); os.IsNotExist(err) {
 		err = os.MkdirAll(versionDir, 0755)
 		if err != nil {

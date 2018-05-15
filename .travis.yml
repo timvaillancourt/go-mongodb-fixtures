@@ -1,0 +1,16 @@
+dist: trusty
+language: go
+go:
+  - "1.x"
+  - "1.8"
+  - "1.10.x"
+  - "master"
+matrix:
+  allow_failures:
+    - go: master
+install:
+  - go get -t ./...
+script:
+  - make
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

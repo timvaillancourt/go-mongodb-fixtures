@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"strings"
 
 	fixtures "github.com/timvaillancourt/go-mongodb-fixtures"
 	"gopkg.in/mgo.v2"
@@ -15,7 +14,7 @@ type serverCommand struct {
 	Value string
 	Db    string
 	Coll  string
-	Query string
+	Query *mgo.Query
 }
 
 var (
@@ -34,22 +33,6 @@ var (
 	}
 )
 
-func serverVersion(session *mgo.Session) (string, error) {
-	buildInfo, err := session.BuildInfo()
-	if err != nil {
-		return "", err
-	}
-	if strings.Contains(buildInfo.Version, "-") {
-		version := strings.SplitN(buildInfo.Version, "-", 2)
-		return version[0], nil
-	}
-	return buildInfo.Version, nil
-}
-
-func serverFlavour(session *mgo.Session) (fixtures.MongoDBFlavour, error) {
-	return fixtures.PerconaServerForMongoDB, nil
-}
-
 func main() {
 	flag.Parse()
 
@@ -57,16 +40,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot get db connection: %s", err.Error())
 	}
+	defer session.Close()
 
-	version, err := serverVersion(session)
+	info, err := fixtures.GetServerInfo(session)
 	if err != nil {
 		log.Fatalf("cannot get db version: %s", err.Error())
 	}
 
-	flavour, err := serverFlavour(session)
-	if err != nil {
-		log.Fatalf("cannot get db flavour: %s", err.Error())
-	}
+	log.Printf("Connected to a %s instance with version %s", info.Flavour, info.Version)
 
 	var data bson.Raw
 	for _, cmd := range serverCommands {
@@ -74,12 +55,12 @@ func main() {
 
 		err = session.DB(cmd.Db).Run(bson.D{{cmd.Name, cmd.Value}}, &data)
 		if err != nil {
-			panic(err)
+			log.Fatalf("Database command %s failed: %s", cmd.Name, err)
 		}
 
-		err = fixtures.Write(flavour, version, cmd.Name, data.Data)
+		err = fixtures.Write(info, cmd.Name, data.Data)
 		if err != nil {
-			panic(err)
+			log.Fatalf("Failed to write %s bson fixture: %s", cmd.Name, err)
 		}
 	}
 }
