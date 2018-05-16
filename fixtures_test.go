@@ -157,13 +157,13 @@ func TestGetServerInfo(t *testing.T) {
 	assert.NoError(t, err, ".GetServerInfo() should not return an error")
 	assert.Equal(t, PerconaServerForMongoDB, serverInfo.Flavour, "server flavour is incorrect")
 	if testDBVersion != "latest" {
-		assert.Truef(t, IsVersionMatch(serverInfo.Version, "= "+testDBVersion), "server version is incorrect. got %s, expected %s", serverInfo.Version, testDBVersion)
+		assert.Truef(t, strings.HasPrefix(serverInfo.Version, testDBVersion), "server version is incorrect. got %s, expected %s*", serverInfo.Version, testDBVersion)
 	}
 
 	serverInfo, err = GetServerInfo(mongodb)
 	assert.NoError(t, err, ".GetServerInfo() should not return an error")
 	assert.Equal(t, MongoDB, serverInfo.Flavour, "server flavour is incorrect")
 	if testDBVersion != "latest" {
-		assert.Truef(t, IsVersionMatch(serverInfo.Version, "= "+testDBVersion), "server version is incorrect. got %s, expected %s", serverInfo.Version, testDBVersion)
+		assert.Truef(t, strings.HasPrefix(serverInfo.Version, testDBVersion), "server version is incorrect. got %s, expected %s*", serverInfo.Version, testDBVersion)
 	}
 }
