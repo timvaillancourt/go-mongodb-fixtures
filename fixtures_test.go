@@ -29,9 +29,9 @@ func TestFlavourDir(t *testing.T) {
 }
 
 func TestVersions(t *testing.T) {
-	assert.NotZero(t, Versions(MongoDB))
+	assert.NotZero(t, Versions(MongoDB), "there must be one or more mongodb versions")
 	psmdbVersions := Versions(PerconaServerForMongoDB)
-	assert.NotZero(t, psmdbVersions)
+	assert.NotZero(t, psmdbVersions, "there must be one or more psmdb versions")
 	testVersionPSMDB = psmdbVersions[0]
 }
 
