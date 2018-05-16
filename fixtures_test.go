@@ -10,13 +10,16 @@ import (
 )
 
 var (
-	testVersionsDir  string
-	testVersionPSMDB string
+	testVersionsDir        string
+	testVersionPSMDB       string
+	testVersionPSMDBStatic string = "3.4.13"
+	testBSONMessage        string = "test123"
 )
 
 func TestVersionDir(t *testing.T) {
-	testVersionsDir = versionsDir()
-	assert.Equal(t, "versions", filepath.Base(testVersionsDir))
+	t.Logf("Loading versions from dir: %s", versionsDir())
+	assert.NotEmpty(t, versionsDir())
+	assert.Equal(t, "versions", filepath.Base(versionsDir()))
 }
 
 func TestFlavourString(t *testing.T) {
@@ -62,7 +65,7 @@ func TestWrite(t *testing.T) {
 		Version: testVersionPSMDB,
 		Flavour: TestMongoDBFlavourMongoDb,
 	}
-	bytes, err := bson.Marshal(&TestDataBSON{Message: "test123"})
+	bytes, err := bson.Marshal(&TestDataBSON{Message: testBSONMessage})
 	assert.NoError(t, err)
 	assert.NoError(t, Write(testServerInfo, "test", bytes))
 }
@@ -71,14 +74,14 @@ func TestLoad(t *testing.T) {
 	defer os.RemoveAll(TestMongoDBFlavourMongoDb.Dir())
 	testData := &TestDataBSON{}
 	assert.NoError(t, Load(TestMongoDBFlavourMongoDb, testVersionPSMDB, "test", &testData))
-	assert.Equal(t, "test123", testData.Message)
+	assert.Equal(t, testBSONMessage, testData.Message)
 }
 
 func TestIsVersionMatch(t *testing.T) {
-	assert.True(t, IsVersionMatch("3.4.13", "> 3"))
-	assert.True(t, IsVersionMatch("3.4.13", "> 3.4"))
-	assert.True(t, IsVersionMatch("3.4.13", "= 3.4.13"))
-	assert.True(t, IsVersionMatch("3.4.13", "!= 2"))
-	assert.False(t, IsVersionMatch("3.4.13", "< 3"))
-	assert.False(t, IsVersionMatch("3.4.13", "= 2.6.12"))
+	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "> 3"))
+	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "> 3.4"))
+	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "= 3.4.13"))
+	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "!= 2"))
+	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "< 3"))
+	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "= 2.6.12"))
 }
