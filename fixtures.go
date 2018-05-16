@@ -82,12 +82,9 @@ func versionsDir() string {
 	// fix for go1.8 runtime.Caller() combined with go test -race
 	if runtime.Version() == "go1.8" {
 		if filepath.Base(baseDir) == "_obj_test" && strings.HasSuffix(baseDir, "/_test/_obj_test") {
+			baseDir = strings.Replace(baseDir, "/_test/_obj_test", "", 1)
 			for _, base := range []string{"vendor", os.Getenv("GOPATH") + "/src"} {
-				baseDir = filepath.Join(
-					base,
-					strings.Replace(baseDir, "/_test/_obj_test", "", 1),
-				)
-				if _, err := os.Stat(baseDir); err == nil {
+				if _, err := os.Stat(filepath.Join(base, baseDir)); err == nil {
 					return filepath.Join(baseDir, "versions")
 				}
 			}
