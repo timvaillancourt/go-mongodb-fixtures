@@ -1,0 +1,11 @@
+---
+version: '3'
+services:
+  psmdb:
+    network_mode: host
+    image: percona/percona-server-mongodb:${TEST_DB_VERSION:-latest}
+    command: --port=${TEST_PSMDB_PORT:-65217}
+  mongo:
+    network_mode: host
+    image: mongo:${TEST_DB_VERSION:-latest}
+    command: --port=${TEST_MONGODB_PORT:-65218}

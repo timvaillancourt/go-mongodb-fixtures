@@ -41,8 +41,11 @@ func isServerPSMDB(session *mgo.Session) (bool, error) {
 	resp := struct {
 		Ok int `bson:"ok"`
 	}{}
-	err := session.Run(bson.M{"getParameter": 1, "profilingRateLimit": true}, &resp)
+	err := session.Run(bson.D{{"getParameter", 1}, {"profilingRateLimit", true}}, &resp)
 	if err != nil || resp.Ok != 1 {
+		if err.Error() == "no option found to get" {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil

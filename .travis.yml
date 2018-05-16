@@ -8,10 +8,18 @@ go:
 matrix:
   allow_failures:
     - go: master
+env:
+  - TEST_DB_VERSION=3.2
+  - TEST_DB_VERSION=3.4
+  - TEST_DB_VERSION=3.6
 install:
   - go get -t ./...
+before_script:
+  - make test-prepare
 script:
-  - make test
+  - make TEST_ENABLE_DB_TESTS=true TEST_DB_VERSION=$TEST_DB_VERSION test
   - make
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+after_script:
+  - make test-clean

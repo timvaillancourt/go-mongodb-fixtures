@@ -55,6 +55,10 @@ func main() {
 
 		err = session.DB(cmd.Db).Run(bson.D{{cmd.Name, cmd.Value}}, &data)
 		if err != nil {
+			if err.Error() == "no such command: "+cmd.Name {
+				log.Printf("Skipping unsupported command (due to error: '%s')", err.Error())
+				continue
+			}
 			log.Fatalf("Database command %s failed: %s", cmd.Name, err)
 		}
 

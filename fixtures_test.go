@@ -4,8 +4,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -14,6 +16,9 @@ var (
 	testVersionPSMDB       string
 	testVersionPSMDBStatic string = "3.4.13"
 	testBSONMessage        string = "test123"
+	testEnableDBTests      string = os.Getenv("TEST_ENABLE_DB_TESTS")
+	testMongoDBPort        string = os.Getenv("TEST_MONGODB_PORT")
+	testPSMDBPort          string = os.Getenv("TEST_PSMDB_PORT")
 )
 
 func TestVersionDir(t *testing.T) {
@@ -83,4 +88,41 @@ func TestIsVersionMatch(t *testing.T) {
 	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "!= 2"))
 	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "< 3"))
 	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "= 2.6.12"))
+}
+
+func TestIsServerPSMDB(t *testing.T) {
+	if testEnableDBTests != "true" {
+		t.Skip("DB tests are disabled, skipping")
+	}
+
+	if testPSMDBPort == "" {
+		t.Skip("TEST_PSMDB_PORT is not set, skipping")
+	}
+	psmdb, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:   []string{"localhost:" + testPSMDBPort},
+		Direct:  true,
+		Timeout: 30 * time.Second,
+	})
+	defer psmdb.Close()
+	assert.NoError(t, err)
+
+	if testMongoDBPort == "" {
+		t.Skip("TEST_MONGODB_PORT is not set, skipping")
+	}
+	mongodb, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:   []string{"localhost:" + testMongoDBPort},
+		Direct:  true,
+		Timeout: 30 * time.Second,
+	})
+	defer mongodb.Close()
+	assert.NoError(t, err)
+
+	isPSMDB, err := isServerPSMDB(psmdb)
+	assert.NoError(t, err, "isServerPSMDB() should return no error")
+	assert.True(t, isPSMDB, "isServerPSMDB() should return true")
+
+	isPSMDB, err = isServerPSMDB(mongodb)
+	assert.NoError(t, err, "isServerPSMDB() should return no error")
+	assert.False(t, isPSMDB, "isServerPSMDB() should return false")
+
 }
