@@ -12,19 +12,24 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type MongoDBFlavour string
-
-const (
-	MongoDB                 MongoDBFlavour = "mongodb"
-	PerconaServerForMongoDB MongoDBFlavour = "psmdb"
-)
-
-func (mf MongoDBFlavour) String() string {
-	return string(mf)
+type MongoDBFlavour interface {
+	String() string
+	Dir() string
 }
 
-func (mf MongoDBFlavour) Dir() string {
-	return filepath.Join(versionsDir(), mf.String())
+type MongoDBFlavourType string
+
+const (
+	MongoDB                 MongoDBFlavourType = "mongodb"
+	PerconaServerForMongoDB MongoDBFlavourType = "psmdb"
+)
+
+func (ft MongoDBFlavourType) String() string {
+	return string(ft)
+}
+
+func (ft MongoDBFlavourType) Dir() string {
+	return filepath.Join(versionsDir(), ft.String())
 }
 
 type ServerInfo struct {
@@ -52,6 +57,7 @@ func GetServerInfo(session *mgo.Session) (*ServerInfo, error) {
 	if err != nil {
 		return info, err
 	}
+
 	info.Version = buildInfo.Version
 	if strings.Contains(buildInfo.Version, "-") {
 		versionElems := strings.SplitN(buildInfo.Version, "-", 2)
