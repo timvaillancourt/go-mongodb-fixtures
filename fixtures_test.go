@@ -17,7 +17,6 @@ var (
 )
 
 func TestVersionDir(t *testing.T) {
-	t.Logf("Loading versions from dir: %s", versionsDir())
 	assert.NotEmpty(t, versionsDir())
 	assert.Equal(t, "versions", filepath.Base(versionsDir()))
 }
