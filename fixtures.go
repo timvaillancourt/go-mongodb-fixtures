@@ -80,7 +80,7 @@ func versionsDir() string {
 	baseDir := filepath.Dir(filename)
 
 	// fix for go1.8 runtime.Caller() combined with go test -race
-	if filepath.Base(baseDir) == "_obj_test" && strings.HasSuffix(s, "/_test/_obj_test") {
+	if filepath.Base(baseDir) == "_obj_test" && strings.HasSuffix(baseDir, "/_test/_obj_test") {
 		baseDir = strings.Replace(baseDir, "/_test/_obj_test", "", 1)
 	}
 
