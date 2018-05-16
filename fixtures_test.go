@@ -88,8 +88,11 @@ func TestIsVersionMatch(t *testing.T) {
 	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "> 3.4"))
 	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "= 3.4.13"))
 	assert.True(t, IsVersionMatch(testVersionPSMDBStatic, "!= 2"))
+
 	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "< 3"))
 	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, "= 2.6.12"))
+	assert.False(t, IsVersionMatch(testVersionPSMDBStatic, ".^^this##.should.break.the.parser.and.return.false.."))
+	assert.False(t, IsVersionMatch(".^^this##.should.break.the.parser.and.return.false..", "> 3"))
 }
 
 func TestIsServerPSMDB(t *testing.T) {
