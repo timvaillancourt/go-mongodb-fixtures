@@ -19,6 +19,7 @@ var (
 	testEnableDBTests      string = os.Getenv("TEST_ENABLE_DB_TESTS")
 	testMongoDBPort        string = os.Getenv("TEST_MONGODB_PORT")
 	testPSMDBPort          string = os.Getenv("TEST_PSMDB_PORT")
+	testDBVersion          string = os.Getenv("TEST_DB_VERSION")
 )
 
 func TestVersionDir(t *testing.T) {
@@ -124,5 +125,45 @@ func TestIsServerPSMDB(t *testing.T) {
 	isPSMDB, err = isServerPSMDB(mongodb)
 	assert.NoError(t, err, "isServerPSMDB() should return no error")
 	assert.False(t, isPSMDB, "isServerPSMDB() should return false")
+}
 
+func TestGetServerInfo(t *testing.T) {
+	if testEnableDBTests != "true" {
+		t.Skip("DB tests are disabled, skipping")
+	}
+
+	if testPSMDBPort == "" {
+		t.Skip("TEST_PSMDB_PORT is not set, skipping")
+	}
+	psmdb, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:   []string{"localhost:" + testPSMDBPort},
+		Direct:  true,
+		Timeout: 30 * time.Second,
+	})
+	defer psmdb.Close()
+	assert.NoError(t, err)
+
+	if testMongoDBPort == "" {
+		t.Skip("TEST_MONGODB_PORT is not set, skipping")
+	}
+	mongodb, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:   []string{"localhost:" + testMongoDBPort},
+		Direct:  true,
+		Timeout: 30 * time.Second,
+	})
+	defer mongodb.Close()
+
+	serverInfo, err := GetServerInfo(psmdb)
+	assert.NoError(t, err, ".GetServerInfo() should not return an error")
+	assert.Equal(t, PerconaServerForMongoDB, serverInfo.Flavour, "server flavour is incorrect")
+	if testDBVersion != "latest" {
+		assert.Equal(t, testDBVersion, serverInfo.Version, "server version is incorrect")
+	}
+
+	serverInfo, err = GetServerInfo(mongodb)
+	assert.NoError(t, err, ".GetServerInfo() should not return an error")
+	assert.Equal(t, MongoDB, serverInfo.Flavour, "server flavour is incorrect")
+	if testDBVersion != "latest" {
+		assert.Equal(t, testDBVersion, serverInfo.Version, "server version is incorrect")
+	}
 }

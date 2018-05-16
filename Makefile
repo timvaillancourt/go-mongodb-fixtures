@@ -22,6 +22,7 @@ test-prepare: docker-compose.yml
 test: $(GOPATH)/bin/gocoverutil
 	GOCACHE=$(GOCACHE) \
 	TEST_ENABLE_DB_TESTS=$(TEST_ENABLE_DB_TESTS) \
+	TEST_DB_VERSION=$(TEST_DB_VERSION) \
 	TEST_PSMDB_PORT=$(TEST_PSMDB_PORT) \
 	TEST_MONGODB_PORT=$(TEST_MONGODB_PORT) \
 	gocoverutil test -v ./...
