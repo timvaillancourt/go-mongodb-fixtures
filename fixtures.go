@@ -85,7 +85,7 @@ func versionsDir() string {
 			baseDir = strings.Replace(baseDir, "/_test/_obj_test", "", 1)
 			for _, base := range []string{"vendor", os.Getenv("GOPATH") + "/src"} {
 				if _, err := os.Stat(filepath.Join(base, baseDir)); err == nil {
-					return filepath.Join(baseDir, "versions")
+					return filepath.Join(base, baseDir, "versions")
 				}
 			}
 		}
