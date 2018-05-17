@@ -21,7 +21,38 @@ var (
 	testMongoDBPort        string = os.Getenv("TEST_MONGODB_PORT")
 	testPSMDBPort          string = os.Getenv("TEST_PSMDB_PORT")
 	testDBVersion          string = os.Getenv("TEST_DB_VERSION")
+	testPSMDBSession       *mgo.Session
+	testMongoDBSession     *mgo.Session
 )
+
+func TestMain(m *testing.M) {
+	if testEnableDBTests == "true" {
+		var err error
+		if testPSMDBPort != "" {
+			testPSMDBSession, err = mgo.DialWithInfo(&mgo.DialInfo{
+				Addrs:   []string{"localhost:" + testPSMDBPort},
+				Direct:  true,
+				Timeout: 30 * time.Second,
+			})
+			if err != nil {
+				panic(err)
+			}
+			defer testPSMDBSession.Close()
+		}
+		if testMongoDBPort != "" {
+			testMongoDBSession, err = mgo.DialWithInfo(&mgo.DialInfo{
+				Addrs:   []string{"localhost:" + testMongoDBPort},
+				Direct:  true,
+				Timeout: 30 * time.Second,
+			})
+			if err != nil {
+				panic(err)
+			}
+			defer testMongoDBSession.Close()
+		}
+	}
+	os.Exit(m.Run())
+}
 
 func TestVersionDir(t *testing.T) {
 	assert.NotEmpty(t, versionsDir())
@@ -97,74 +128,31 @@ func TestIsVersionMatch(t *testing.T) {
 
 func TestIsServerPSMDB(t *testing.T) {
 	if testEnableDBTests != "true" {
-		t.Skip("DB tests are disabled, skipping")
+		t.Skip("Skipping test, DB tests are disabled")
 	}
 
-	if testPSMDBPort == "" {
-		t.Skip("TEST_PSMDB_PORT is not set, skipping")
-	}
-	psmdb, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:   []string{"localhost:" + testPSMDBPort},
-		Direct:  true,
-		Timeout: 30 * time.Second,
-	})
-	defer psmdb.Close()
-	assert.NoError(t, err)
-
-	if testMongoDBPort == "" {
-		t.Skip("TEST_MONGODB_PORT is not set, skipping")
-	}
-	mongodb, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:   []string{"localhost:" + testMongoDBPort},
-		Direct:  true,
-		Timeout: 30 * time.Second,
-	})
-	defer mongodb.Close()
-	assert.NoError(t, err)
-
-	isPSMDB, err := isServerPSMDB(psmdb)
+	isPSMDB, err := isServerPSMDB(testPSMDBSession)
 	assert.NoError(t, err, "isServerPSMDB() should return no error")
 	assert.True(t, isPSMDB, "isServerPSMDB() should return true")
 
-	isPSMDB, err = isServerPSMDB(mongodb)
+	isPSMDB, err = isServerPSMDB(testMongoDBSession)
 	assert.NoError(t, err, "isServerPSMDB() should return no error")
 	assert.False(t, isPSMDB, "isServerPSMDB() should return false")
 }
 
 func TestGetServerInfo(t *testing.T) {
 	if testEnableDBTests != "true" {
-		t.Skip("DB tests are disabled, skipping")
+		t.Skip("Skipping test, DB tests are disabled")
 	}
 
-	if testPSMDBPort == "" {
-		t.Skip("TEST_PSMDB_PORT is not set, skipping")
-	}
-	psmdb, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:   []string{"localhost:" + testPSMDBPort},
-		Direct:  true,
-		Timeout: 30 * time.Second,
-	})
-	defer psmdb.Close()
-	assert.NoError(t, err)
-
-	if testMongoDBPort == "" {
-		t.Skip("TEST_MONGODB_PORT is not set, skipping")
-	}
-	mongodb, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:   []string{"localhost:" + testMongoDBPort},
-		Direct:  true,
-		Timeout: 30 * time.Second,
-	})
-	defer mongodb.Close()
-
-	serverInfo, err := GetServerInfo(psmdb)
+	serverInfo, err := GetServerInfo(testPSMDBSession)
 	assert.NoError(t, err, ".GetServerInfo() should not return an error")
 	assert.Equal(t, PerconaServerForMongoDB, serverInfo.Flavour, "server flavour is incorrect")
 	if testDBVersion != "latest" {
 		assert.Truef(t, strings.HasPrefix(serverInfo.Version, testDBVersion), "server version is incorrect. got %s, expected %s*", serverInfo.Version, testDBVersion)
 	}
 
-	serverInfo, err = GetServerInfo(mongodb)
+	serverInfo, err = GetServerInfo(testMongoDBSession)
 	assert.NoError(t, err, ".GetServerInfo() should not return an error")
 	assert.Equal(t, MongoDB, serverInfo.Flavour, "server flavour is incorrect")
 	if testDBVersion != "latest" {

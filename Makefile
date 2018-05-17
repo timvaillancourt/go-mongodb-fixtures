@@ -4,6 +4,7 @@ TEST_ENABLE_DB_TESTS?=
 TEST_DB_VERSION?=latest
 TEST_PSMDB_PORT?=65217
 TEST_MONGODB_PORT?=65218
+TEST_PACKAGES=$(shell go list ./...|grep -v \/cmd$$)
 
 all: get-fixtures
 
@@ -25,7 +26,7 @@ test: $(GOPATH)/bin/gocoverutil
 	TEST_DB_VERSION=$(TEST_DB_VERSION) \
 	TEST_PSMDB_PORT=$(TEST_PSMDB_PORT) \
 	TEST_MONGODB_PORT=$(TEST_MONGODB_PORT) \
-	gocoverutil test -v ./...
+	gocoverutil test -v $(TEST_PACKAGES)
 
 test-clean:
 	docker-compose down
